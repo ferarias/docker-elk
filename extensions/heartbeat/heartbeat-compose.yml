@@ -1,15 +1,12 @@
 services:
   heartbeat:
-    build:
-      context: extensions/heartbeat/
-      args:
-        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    image: docker.elastic.co/beats/heartbeat:${ELASTIC_VERSION}
     command:
       # Log to stderr.
       - -e
       # Disable config file permissions checks. Allows mounting
       # 'config/heartbeat.yml' even if it's not owned by root.
-      # see: https://www.elastic.co/docs/reference/beats/libbeat/config-file-permissions
+      # see: https://www.elastic.co/guide/en/beats/libbeat/7.17/config-file-permissions.html
       - --strict.perms=false
     volumes:
       - ./extensions/heartbeat/config/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml:ro,Z

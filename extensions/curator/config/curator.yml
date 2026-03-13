@@ -1,5 +1,5 @@
 # Curator configuration
-# https://www.elastic.co/docs/reference/elasticsearch/curator/configfile
+# https://www.elastic.co/guide/en/elasticsearch/client/curator/7.0/configfile.html
 
 elasticsearch:
   client:

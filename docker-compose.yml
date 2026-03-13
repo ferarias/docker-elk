@@ -10,17 +10,13 @@ services:
   # the values defined inside the '.env' file, and the built-in roles to their
   # default permissions.
   #
-  # By default, it is excluded from the services started by 'docker compose up'
-  # due to the non-default profile it belongs to. To run it, either provide the
-  # '--profile=setup' CLI flag to Compose commands, or "up" the service by name
-  # such as 'docker compose up setup'.
+  # It runs automatically on every 'docker compose up' and exits cleanly after
+  # completion. The script is idempotent: subsequent runs update passwords and
+  # roles to match the values defined in the '.env' file.
   setup:
-    profiles:
-      - setup
-    build:
-      context: setup/
-      args:
-        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
+    entrypoint: /entrypoint.sh
+    restart: "no"
     init: true
     volumes:
       - ./setup/entrypoint.sh:/entrypoint.sh:ro,Z
@@ -35,34 +31,13 @@ services:
       HEARTBEAT_INTERNAL_PASSWORD: ${HEARTBEAT_INTERNAL_PASSWORD:-}
       MONITORING_INTERNAL_PASSWORD: ${MONITORING_INTERNAL_PASSWORD:-}
       BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
-    network_mode: service:elasticsearch
+    networks:
+      - elk
     depends_on:
       - elasticsearch
 
-  # The 'kibana-genkeys' service runs a one-off command which generates and
-  # prints encryption keys for Kibana.
-  #
-  # By default, it is excluded from the services started by 'docker compose up'
-  # due to the non-default profile it belongs to. To run it, either provide the
-  # '--profile=setup' CLI flag to Compose commands, or "up" the service by name
-  # such as 'docker compose up kibana-genkeys'.
-  kibana-genkeys:
-    profiles:
-      - setup
-    build:
-      context: kibana/
-      args:
-        ELASTIC_VERSION: ${ELASTIC_VERSION}
-    command:
-      - bin/kibana-encryption-keys
-      - generate
-    network_mode: none
-
   elasticsearch:
-    build:
-      context: elasticsearch/
-      args:
-        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
     volumes:
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
       - elasticsearch:/usr/share/elasticsearch/data:Z
@@ -77,17 +52,14 @@ services:
       # Elasticsearch. Ignored on subsequent runs.
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
       # Use single node discovery in order to disable production mode and avoid bootstrap checks.
-      # see: https://www.elastic.co/docs/deploy-manage/deploy/self-managed/bootstrap-checks
+      # see: https://www.elastic.co/guide/en/elasticsearch/reference/7.17/bootstrap-checks.html
       discovery.type: single-node
     networks:
       - elk
     restart: unless-stopped
 
   logstash:
-    build:
-      context: logstash/
-      args:
-        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    image: docker.elastic.co/logstash/logstash:${ELASTIC_VERSION}
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
@@ -106,10 +78,7 @@ services:
     restart: unless-stopped
 
   kibana:
-    build:
-      context: kibana/
-      args:
-        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION}
     volumes:
       - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
     ports:

@@ -17,4 +17,4 @@ All configuration files are available in the `config/` directory.
 
 ## Documentation
 
-[Curator Reference](https://www.elastic.co/docs/reference/elasticsearch/curator)
+[Curator Reference](https://www.elastic.co/guide/en/elasticsearch/client/curator/7.0/index.html)
